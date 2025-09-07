@@ -1,9 +1,10 @@
-# src/fetch_data.py
-import os,sys
+# src/fetchData.py
+import os
+import sys
 import pandas as pd
 from nba_api.stats.endpoints import leaguedashplayerstats
 from dotenv import load_dotenv
-from sqlalchemy import create_engine,text
+from sqlalchemy import create_engine, text
 
 # Load env vars
 load_dotenv()
@@ -34,28 +35,30 @@ def insert_data(df, season):
             player_id = int(row["PLAYER_ID"])
             player_name = row["PLAYER_NAME"]
 
-            # Skip or fix missing names
-            if pd.isna(player_name) or player_name is None or str(player_name).strip() == "":
+            # Skip missing player names
+            if pd.isna(player_name) or str(player_name).strip() == "":
                 print(f"⚠️ Skipping player_id {player_id} because name is missing")
-                continue  # <-- skip bad rows (recommended)
+                continue
 
+            # Insert player
             conn.execute(
                 text("""
-                   INSERT INTO players (player_id, player_name)
-                   VALUES (:player_id, :player_name)
-                   ON CONFLICT (player_id) DO NOTHING
-                 """),
+                    INSERT INTO players (player_id, player_name)
+                    VALUES (:player_id, :player_name)
+                    ON CONFLICT (player_id) DO NOTHING
+                """),
                 {"player_id": player_id, "player_name": player_name}
-             )
-
+            )
 
             # Insert player stats
             conn.execute(
-               text("""
+                text("""
                     INSERT INTO player_season_stats
-                    (player_id, season, team_abbr, gp, min_total, fga, fgm, fg3a, fg3m)
-                    VALUES (:player_id, :season, :team_abbr, :gp, :min_total, :fga, :fgm, :fg3a, :fg3m)
-                    ON CONFLICT DO NOTHING
+                    (player_id, season, team_abbr, gp, min_total, fga, fgm, fg3a, fg3m,
+                     fta, ftm, oreb, dreb, reb, ast, stl, blk, tov, pts, ts_pct)
+                    VALUES (:player_id, :season, :team_abbr, :gp, :min_total, :fga, :fgm, :fg3a, :fg3m,
+                            :fta, :ftm, :oreb, :dreb, :reb, :ast, :stl, :blk, :tov, :pts, :ts_pct)
+                    ON CONFLICT (season, player_id) DO NOTHING
                 """),
                 {
                     "player_id": row["PLAYER_ID"],
@@ -67,9 +70,19 @@ def insert_data(df, season):
                     "fgm": row["FGM"],
                     "fg3a": row["FG3A"],
                     "fg3m": row["FG3M"],
+                    "fta": row["FTA"],
+                    "ftm": row["FTM"],
+                    "oreb": row["OREB"],
+                    "dreb": row["DREB"],
+                    "reb": row["REB"],
+                    "ast": row["AST"],
+                    "stl": row["STL"],
+                    "blk": row["BLK"],
+                    "tov": row["TOV"],
+                    "pts": row["PTS"],
+                    "ts_pct": row.get("TS_PCT", None),  # handle missing TS_PCT
                 }
             )
-
 
     print(f"✅ Inserted {len(df)} player rows for {season}")
 
@@ -77,8 +90,7 @@ def main():
     season = "2022-23"
     df = fetch_season_stats(season)
     insert_data(df, season)
-    print(df.columns.tolist())
-
+    print("Columns in DataFrame:", df.columns.tolist())
 
 if __name__ == "__main__":
     main()
