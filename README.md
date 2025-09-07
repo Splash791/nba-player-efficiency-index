@@ -1,6 +1,8 @@
 # NBA Player Efficiency Index
 
-A Python project to fetch NBA player stats, calculate efficiency ratings, and store the data in a PostgreSQL database.
+A Python project to fetch NBA player stats for the 2022-2023 seaoson, calculate efficiency ratings, and store the data in a PostgreSQL database.
+
+<img width="455" height="361" alt="Screenshot 2025-09-07 at 11 58 22 AM" src="https://github.com/user-attachments/assets/d3ca4ef1-9d0a-41bd-a23f-b763708ed70a" />
 
 ## Features
 
